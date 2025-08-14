@@ -1,4 +1,4 @@
-# Dojo-Sensei 🥋
+# [Dojo-Sensei](https://amatsukan.github.io/Dojo-Sensei/) 🥋
 
 Um gerenciador de sessões de Coding Dojo moderno, completo e inteligente, construído para rodar diretamente no navegador. Ideal para facilitar sessões de pair programming, treinamentos e workshops de desenvolvimento.
 
@@ -27,13 +27,9 @@ Com uma interface elegante e sombria, o Dojo-Sensei oferece todas as ferramentas
 
 ## 🚀 Como Usar
 
-Como esta é uma aplicação estática, não há necessidade de instalação ou build.
+1. Acesse a aplicação diretamente pelo seu navegador: [Dojo-Sensei](https://amatsukan.github.io/Dojo-Sensei/)
 
-1.  Faça o download do arquivo `dojo-sensei.html`.
-
-2.  Abra-o em qualquer navegador moderno (Chrome, Firefox, Edge, etc.).
-
-3.  Pronto! Comece a configurar sua sessão de dojo.
+2. Pronto! Comece a configurar sua sessão de dojo.
 
 ## 🛠️ Tecnologias Utilizadas
 
