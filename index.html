@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dojo-Sensei - Gerenciador de Coding Dojo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark-primary: #111111; --bg-dark-secondary: #1E1E1E; --border-color: #333333;
+            --text-primary: #cccccc; --text-secondary: #ffffff; --accent-red: #c53030;
+            --accent-red-hover: #e53e3e; --accent-blue: #3182ce; --accent-blue-hover: #4299e1;
+            --accent-yellow: #d69e2e;
+        }
+        body { font-family: 'Lato', sans-serif; background-color: var(--bg-dark-primary); color: var(--text-primary); }
+        h1, h2, h3 { color: var(--text-secondary); }
+        #main-title { font-weight: 900; letter-spacing: 0.1em; color: var(--text-secondary); }
+        .card { background-color: var(--bg-dark-secondary); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); }
+        .input-field, .textarea-field { background-color: #111111; border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-secondary); transition: border-color 0.3s, box-shadow 0.3s; }
+        .input-field:focus, .textarea-field:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 8px var(--accent-blue); }
+        .btn { border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; border: 1px solid transparent; }
+        .btn-primary { background-color: var(--accent-red); color: #fff; }
+        .btn-primary:hover { background-color: var(--accent-red-hover); box-shadow: 0 0 10px var(--accent-red-hover); }
+        .btn-secondary { background-color: var(--border-color); color: var(--text-secondary); }
+        .btn-secondary:hover { background-color: #4a5568; }
+        .btn-outline { background-color: transparent; color: var(--accent-red); border-color: var(--accent-red); }
+        .btn-outline:hover { background-color: var(--accent-red); color: #fff; }
+        .btn-ai { background-color: var(--accent-blue); color: #fff; }
+        .btn-ai:hover { background-color: var(--accent-blue-hover); box-shadow: 0 0 10px var(--accent-blue-hover); }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .trainer-checkbox { appearance: none; background-color: #111111; border: 1px solid var(--border-color); width: 1.25rem; height: 1.25rem; border-radius: 2px; cursor: pointer; position: relative; }
+        .trainer-checkbox:checked { background-color: var(--accent-yellow); border-color: var(--accent-yellow); }
+        .trainer-checkbox:checked::after { content: '✓'; font-size: 1rem; color: var(--bg-dark-primary); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: var(--bg-dark-primary); } ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: #4a5568; }
+        
+        .accordion-header { cursor: pointer; padding: 1rem; background-color: #161616; border-bottom: 1px solid var(--border-color); transition: background-color 0.3s; }
+        .accordion-header:hover { background-color: #2a2a2a; }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; background-color: #1a1a1a; }
+        .accordion-content.open { max-height: 1000px; }
+        .task-item, .test-case-item { border-bottom: 1px solid var(--border-color); transition: opacity 0.3s; }
+        .task-item.completed { opacity: 0.5; }
+        .task-item.completed .task-objective { text-decoration: line-through; }
+        .test-case-item code { background-color: #000; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-6xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 id="main-title" class="text-5xl font-bold">DOJO-SENSEI</h1>
+            <p class="text-slate-400 mt-2">Organize suas sessões de pair programming.</p>
+        </header>
+
+        <main id="setup-screen" class="card p-8 space-y-8">
+            <div class="flex justify-center">
+                <button id="import-session-btn" class="btn btn-secondary py-2 px-6">Importar Sessão</button>
+                <input type="file" id="import-file-input" class="hidden" accept=".json">
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold mb-4 pb-2">1. Participantes</h2>
+                <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                    <input type="text" id="participant-name" placeholder="Nome do Participante" class="input-field flex-grow px-4 py-2">
+                    <button id="add-participant" class="btn btn-primary py-2 px-6">Adicionar</button>
+                </div>
+                <div id="participants-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold mb-4 pb-2">2. Configurações</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <label class="font-bold">Modo de Operação</label>
+                        <div class="flex gap-4"><label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="dojo-mode" value="single" checked class="form-radio h-4 w-4 text-red-500 bg-gray-700 border-gray-600"><span>Single Team</span></label><label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="dojo-mode" value="multi" class="form-radio h-4 w-4 text-red-500 bg-gray-700 border-gray-600"><span>Multi Team</span></label></div>
+                    </div>
+                    <div id="multi-team-options" class="hidden space-y-3"><label for="team-count" class="font-bold">Quantidade de Duplas</label><input type="number" id="team-count" min="1" value="2" class="input-field w-full px-4 py-2"></div>
+                    <div class="space-y-3 md:col-span-2"><label for="timer-duration" class="font-bold">Duração da Rodada (minutos)</label><input type="number" id="timer-duration" min="1" value="10" class="input-field w-full px-4 py-2"></div>
+                </div>
+            </div>
+            <div class="pt-4"><button id="start-dojo" class="btn btn-primary w-full text-lg py-3 px-6 flex items-center justify-center gap-2">Iniciar Dojo</button></div>
+        </main>
+
+        <section id="session-screen" class="hidden card p-8 fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                    <div class="text-center mb-8"><h2 class="text-2xl font-bold text-red-500 mb-2">Cronômetro</h2><div id="timer-display" class="text-7xl font-bold tracking-tighter">00:00</div></div>
+                    <div class="mb-8"><h3 class="text-2xl font-bold text-center mb-4">Duplas da Rodada</h3><div id="current-pairs" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4"></div><p id="leftover-participant" class="text-center mt-4"></p></div>
+                </div>
+                <div id="session-details" class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                    <div class="accordion-item border border-gray-700 rounded-md">
+                        <div class="accordion-header flex justify-between items-center"><h3 class="text-xl font-bold">Descrição do Problema</h3><span class="transform transition-transform duration-300">▼</span></div>
+                        <div class="accordion-content p-4"><textarea id="problem-description" class="textarea-field w-full h-32 p-2" placeholder="Cole a descrição do problema aqui..."></textarea></div>
+                    </div>
+                    <div class="accordion-item border border-gray-700 rounded-md">
+                        <div class="accordion-header flex justify-between items-center"><h3 class="text-xl font-bold">Casos de Teste</h3><span class="transform transition-transform duration-300">▼</span></div>
+                        <div class="accordion-content p-4">
+                            <div id="test-case-list"></div>
+                            <button id="generate-tests-btn" class="btn btn-ai w-full py-2 px-4 mt-2 flex items-center justify-center gap-2">✨ Gerar Casos de Teste com IA</button>
+                            <p id="test-gen-status" class="text-center text-sm h-5 mt-2"></p>
+                        </div>
+                    </div>
+                    <div class="accordion-item border border-gray-700 rounded-md">
+                        <div class="accordion-header flex justify-between items-center"><h3 class="text-xl font-bold">Tarefas a Fazer</h3><span class="transform transition-transform duration-300">▼</span></div>
+                        <div class="accordion-content p-4">
+                            <button id="generate-tasks-btn" class="btn btn-ai w-full py-2 px-4 mb-4 flex items-center justify-center gap-2">✨ Gerar Tarefas com IA</button>
+                            <p id="task-gen-status" class="text-center text-sm h-5 mb-2"></p>
+                            <div id="todo-list"></div>
+                            <div class="mt-4 space-y-2">
+                                <input type="text" id="task-objective" placeholder="Objetivo da tarefa" class="input-field w-full p-2">
+                                <input type="text" id="task-delivery" placeholder="Entrega esperada" class="input-field w-full p-2">
+                                <button id="add-task-btn" class="btn btn-secondary w-full py-2">Adicionar Tarefa</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item border border-gray-700 rounded-md">
+                        <div class="accordion-header flex justify-between items-center"><h3 class="text-xl font-bold">Tarefas Concluídas</h3><span class="transform transition-transform duration-300">▼</span></div>
+                        <div class="accordion-content p-4"><div id="completed-list"></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button id="toggle-timer" class="btn btn-primary py-3 px-8 flex items-center justify-center gap-2 w-full sm:w-auto"></button>
+                <button id="next-round" class="btn btn-secondary py-3 px-8 flex items-center justify-center gap-2 w-full sm:w-auto">Próxima Rodada</button>
+                <button id="export-session-btn" class="btn btn-secondary py-3 px-8 flex items-center justify-center gap-2 w-full sm:w-auto">Exportar</button>
+                <button id="end-dojo" class="btn btn-outline py-3 px-8 flex items-center justify-center gap-2 w-full sm:w-auto">Encerrar</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- DOM Elements ---
+        const setupScreen = document.getElementById('setup-screen');
+        const sessionScreen = document.getElementById('session-screen');
+        const participantNameInput = document.getElementById('participant-name');
+        const addParticipantBtn = document.getElementById('add-participant');
+        const participantsListDiv = document.getElementById('participants-list');
+        const startDojoBtn = document.getElementById('start-dojo');
+        const timerDisplay = document.getElementById('timer-display');
+        const currentPairsDiv = document.getElementById('current-pairs');
+        const leftoverParticipantP = document.getElementById('leftover-participant');
+        const toggleTimerBtn = document.getElementById('toggle-timer');
+        const nextRoundBtn = document.getElementById('next-round');
+        const endDojoBtn = document.getElementById('end-dojo');
+        const importSessionBtn = document.getElementById('import-session-btn');
+        const importFileInput = document.getElementById('import-file-input');
+        const exportSessionBtn = document.getElementById('export-session-btn');
+        const problemDescriptionTextarea = document.getElementById('problem-description');
+        const generateTasksBtn = document.getElementById('generate-tasks-btn');
+        const taskGenStatusP = document.getElementById('task-gen-status');
+        const todoListDiv = document.getElementById('todo-list');
+        const completedListDiv = document.getElementById('completed-list');
+        const taskObjectiveInput = document.getElementById('task-objective');
+        const taskDeliveryInput = document.getElementById('task-delivery');
+        const addTaskBtn = document.getElementById('add-task-btn');
+        const generateTestsBtn = document.getElementById('generate-tests-btn');
+        const testCaseListDiv = document.getElementById('test-case-list');
+        const testGenStatusP = document.getElementById('test-gen-status');
+
+        // --- Application State ---
+        let sessionState = {
+            participants: [],
+            settings: { mode: 'single', teamCount: 2, timerDuration: 10 },
+            problemDescription: '',
+            todoTasks: [],
+            completedTasks: [],
+            testCases: []
+        };
+        let timerInterval = null;
+        let remainingTime = 0;
+        let isPaused = true;
+        let allPossiblePairs = [];
+        let synth = null;
+
+        const playIcon = `Play`;
+        const pauseIcon = `Pause`;
+
+        // --- Render Functions ---
+        function renderAll() {
+            renderParticipants();
+            renderTasks();
+            renderTestCases();
+        }
+
+        function renderParticipants() {
+            participantsListDiv.innerHTML = '';
+            if (sessionState.participants.length === 0) {
+                participantsListDiv.innerHTML = `<p class="text-center opacity-50">Nenhum participante foi adicionado.</p>`;
+                return;
+            }
+            sessionState.participants.forEach((p, index) => {
+                const participantDiv = document.createElement('div');
+                participantDiv.className = 'flex items-center justify-between bg-black/20 p-3 rounded-md animate-fade-in';
+                participantDiv.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" data-index="${index}" ${p.isTrainer ? 'checked' : ''} class="trainer-checkbox">
+                            <span class="ml-2 text-yellow-400 text-sm font-bold">Treinador</span>
+                        </label>
+                        <span class="font-medium">${p.name}</span>
+                    </div>
+                    <button data-index="${index}" class="remove-participant text-red-500 hover:text-red-400 transition text-2xl font-bold">&times;</button>
+                `;
+                participantsListDiv.appendChild(participantDiv);
+            });
+        }
+        
+        function renderTasks() {
+            todoListDiv.innerHTML = '';
+            completedListDiv.innerHTML = '';
+            
+            if (sessionState.todoTasks.length === 0) {
+                todoListDiv.innerHTML = `<p class="text-center opacity-50 text-sm">Nenhuma tarefa pendente.</p>`;
+            } else {
+                 sessionState.todoTasks.forEach((task, index) => {
+                    const taskEl = document.createElement('div');
+                    taskEl.className = 'task-item p-3';
+                    taskEl.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold task-objective">${task.objective}</p>
+                                <p class="text-sm opacity-70">${task.delivery}</p>
+                            </div>
+                            <button data-index="${index}" class="complete-task-btn text-2xl text-green-500 hover:text-green-400">✓</button>
+                        </div>
+                    `;
+                    todoListDiv.appendChild(taskEl);
+                });
+            }
+
+            if (sessionState.completedTasks.length === 0) {
+                completedListDiv.innerHTML = `<p class="text-center opacity-50 text-sm">Nenhuma tarefa concluída.</p>`;
+            } else {
+                sessionState.completedTasks.forEach(task => {
+                    const taskEl = document.createElement('div');
+                    taskEl.className = 'task-item p-3 completed';
+                    taskEl.innerHTML = `<p class="font-bold task-objective">${task.objective}</p><p class="text-sm opacity-70">${task.delivery}</p>`;
+                    completedListDiv.appendChild(taskEl);
+                });
+            }
+        }
+        
+        function renderTestCases() {
+            testCaseListDiv.innerHTML = '';
+            if (sessionState.testCases.length === 0) {
+                testCaseListDiv.innerHTML = `<p class="text-center opacity-50 text-sm">Nenhum caso de teste gerado.</p>`;
+                return;
+            }
+            sessionState.testCases.forEach(tc => {
+                const tcEl = document.createElement('div');
+                tcEl.className = 'test-case-item p-3';
+                tcEl.innerHTML = `
+                    <p class="font-bold">${tc.description}</p>
+                    <p class="text-sm mt-1"><strong>Entrada:</strong> code>${tc.input}</code></p>
+                    <p class="text-sm"><strong>Saída Esperada:</strong> <code>${tc.expectedOutput}</code></p>
+                `;
+                testCaseListDiv.appendChild(tcEl);
+            });
+        }
+
+        // --- Core Logic ---
+        function addParticipant() {
+            const name = participantNameInput.value.trim();
+            if (name && !sessionState.participants.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+                sessionState.participants.push({ name, isTrainer: false });
+                participantNameInput.value = '';
+                renderParticipants();
+            }
+            participantNameInput.focus();
+        }
+        
+        function addTask() {
+            const objective = taskObjectiveInput.value.trim();
+            const delivery = taskDeliveryInput.value.trim();
+            if (objective && delivery) {
+                sessionState.todoTasks.push({ objective, delivery });
+                taskObjectiveInput.value = '';
+                taskDeliveryInput.value = '';
+                renderTasks();
+            }
+        }
+        
+        function completeTask(index) {
+            const [task] = sessionState.todoTasks.splice(index, 1);
+            sessionState.completedTasks.push(task);
+            renderTasks();
+        }
+        
+        // --- AI & File Functions ---
+        async function generateTasks() {
+            sessionState.problemDescription = problemDescriptionTextarea.value;
+            if (!sessionState.problemDescription.trim()) {
+                alert("Por favor, insira uma descrição do problema primeiro.");
+                return;
+            }
+            taskGenStatusP.textContent = 'Analisando o problema...';
+            generateTasksBtn.disabled = true;
+
+            const prompt = `Analise a seguinte descrição de um problema de programação e divida-o em uma lista de tarefas pequenas e acionáveis para uma sessão de coding dojo. Para cada tarefa, forneça um "objective" (objetivo) e um "delivery" (entrega esperada). Retorne a resposta como um array JSON de objetos. Descrição: "${sessionState.problemDescription}"`;
+            
+            try {
+                const payload = {
+                    contents: [{ role: "user", parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    "objective": { "type": "STRING" },
+                                    "delivery": { "type": "STRING" }
+                                },
+                                required: ["objective", "delivery"]
+                            }
+                        }
+                    }
+                };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                const result = await response.json();
+                
+                const jsonText = result.candidates[0].content.parts[0].text;
+                const tasks = JSON.parse(jsonText);
+                sessionState.todoTasks.push(...tasks);
+                renderTasks();
+                taskGenStatusP.textContent = '✅ Tarefas geradas!';
+
+            } catch (error) {
+                console.error("Erro ao gerar tarefas:", error);
+                taskGenStatusP.textContent = '❌ Erro ao gerar tarefas.';
+            } finally {
+                generateTasksBtn.disabled = false;
+            }
+        }
+
+        async function generateTestCases() {
+            sessionState.problemDescription = problemDescriptionTextarea.value;
+            if (!sessionState.problemDescription.trim()) {
+                alert("Por favor, insira uma descrição do problema primeiro.");
+                return;
+            }
+            testGenStatusP.textContent = 'Gerando casos de teste...';
+            generateTestsBtn.disabled = true;
+
+            const prompt = `Baseado na seguinte descrição de um problema de programação, gere uma lista de casos de teste, incluindo casos de borda (edge cases). Para cada caso de teste, forneça uma 'description' (descrição), um 'input' (entrada) e um 'expectedOutput' (saída esperada). Retorne a resposta como um array JSON de objetos. Descrição: "${sessionState.problemDescription}"`;
+            
+            try {
+                const payload = {
+                    contents: [{ role: "user", parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "ARRAY", items: { type: "OBJECT", properties: {
+                                "description": { "type": "STRING" },
+                                "input": { "type": "STRING" },
+                                "expectedOutput": { "type": "STRING" }
+                            }, required: ["description", "input", "expectedOutput"] }
+                        }
+                    }
+                };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                const result = await response.json();
+                
+                const jsonText = result.candidates[0].content.parts[0].text;
+                const tests = JSON.parse(jsonText);
+                sessionState.testCases.push(...tests);
+                renderTestCases();
+                testGenStatusP.textContent = '✅ Testes gerados!';
+
+            } catch (error) {
+                console.error("Erro ao gerar testes:", error);
+                testGenStatusP.textContent = '❌ Erro ao gerar testes.';
+            } finally {
+                generateTestsBtn.disabled = false;
+            }
+        }
+        
+        function exportSession() {
+            sessionState.problemDescription = problemDescriptionTextarea.value;
+            sessionState.settings.mode = document.querySelector('input[name="dojo-mode"]:checked').value;
+            sessionState.settings.teamCount = document.getElementById('team-count').value;
+            sessionState.settings.timerDuration = document.getElementById('timer-duration').value;
+            
+            const dataStr = JSON.stringify(sessionState, null, 2);
+            const dataBlob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(dataBlob);
+            const a = document.createElement('a'); a.href = url; a.download = 'dojo-session.json'; a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importSession(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedState = JSON.parse(e.target.result);
+                    sessionState = { ...{testCases: []}, ...importedState };
+                    document.querySelector(`input[name="dojo-mode"][value="${sessionState.settings.mode}"]`).checked = true;
+                    document.getElementById('team-count').value = sessionState.settings.teamCount;
+                    document.getElementById('timer-duration').value = sessionState.settings.timerDuration;
+                    problemDescriptionTextarea.value = sessionState.problemDescription;
+                    renderAll();
+                    alert('Sessão importada com sucesso!');
+                } catch (error) {
+                    alert('Erro ao ler o arquivo de sessão.');
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- Event Listeners ---
+        addParticipantBtn.addEventListener('click', addParticipant);
+        participantNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addParticipant();
+            }
+        });
+
+        addTaskBtn.addEventListener('click', addTask);
+        generateTasksBtn.addEventListener('click', generateTasks);
+        generateTestsBtn.addEventListener('click', generateTestCases);
+        importSessionBtn.addEventListener('click', () => importFileInput.click());
+        importFileInput.addEventListener('change', importSession);
+        exportSessionBtn.addEventListener('click', exportSession);
+        
+        participantsListDiv.addEventListener('click', (e) => {
+             if (e.target.classList.contains('remove-participant')) {
+                sessionState.participants.splice(e.target.dataset.index, 1);
+                renderParticipants();
+            } else if (e.target.classList.contains('trainer-checkbox')) {
+                sessionState.participants[e.target.dataset.index].isTrainer = e.target.checked;
+            }
+        });
+
+        todoListDiv.addEventListener('click', (e) => {
+            if (e.target.classList.contains('complete-task-btn')) {
+                completeTask(e.target.dataset.index);
+            }
+        });
+        
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const content = header.nextElementSibling;
+                content.classList.toggle('open');
+                header.querySelector('span').classList.toggle('rotate-180');
+            });
+        });
+
+        startDojoBtn.addEventListener('click', () => {
+            if (sessionState.participants.length < 2) { alert('Adicione pelo menos 2 participantes.'); return; }
+            sessionState.problemDescription = problemDescriptionTextarea.value;
+            setupScreen.classList.add('hidden');
+            sessionScreen.classList.remove('hidden');
+            generateAllPossiblePairs();
+            selectAndDisplayPairs();
+        });
+        
+        function updateTimerDisplay() { const minutes = Math.floor(remainingTime / 60); const seconds = remainingTime % 60; timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; timerDisplay.style.color = remainingTime <= 10 && remainingTime > 0 ? 'var(--accent-yellow)' : remainingTime === 0 ? 'var(--accent-red)' : 'var(--text-secondary)'; }
+        function timerTick() { if (remainingTime > 0) { remainingTime--; updateTimerDisplay(); } else { clearInterval(timerInterval); timerInterval = null; isPaused = true; toggleTimerBtn.innerHTML = playIcon; if (typeof Tone !== 'undefined' && !synth) { synth = new Tone.Synth().toDestination(); } if (synth) { synth.triggerAttackRelease("C5", "8n", Tone.now()); } } }
+        function toggleTimer() { isPaused = !isPaused; if (!isPaused && remainingTime > 0) { timerInterval = setInterval(timerTick, 1000); toggleTimerBtn.innerHTML = pauseIcon; } else { clearInterval(timerInterval); timerInterval = null; toggleTimerBtn.innerHTML = playIcon; } }
+        function generateAllPossiblePairs() { const trainers = sessionState.participants.filter(p => p.isTrainer); const students = sessionState.participants.filter(p => !p.isTrainer); const pairs = []; for (const trainer of trainers) { for (const student of students) { pairs.push([trainer.name, student.name].sort()); } } for (let i = 0; i < students.length; i++) { for (let j = i + 1; j < students.length; j++) { pairs.push([students[i].name, students[j].name].sort()); } } const uniquePairStrings = [...new Set(pairs.map(p => p.join('-')))]; allPossiblePairs = uniquePairStrings.map(s => s.split('-')); for (let i = allPossiblePairs.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [allPossiblePairs[i], allPossiblePairs[j]] = [allPossiblePairs[j], allPossiblePairs[i]]; } }
+        function selectAndDisplayPairs() { const mode = document.querySelector('input[name="dojo-mode"]:checked').value; const teamCount = mode === 'single' ? 1 : parseInt(document.getElementById('team-count').value, 10); let availableParticipants = [...sessionState.participants.map(p => p.name)]; let newPairs = []; if (allPossiblePairs.length < teamCount) { generateAllPossiblePairs(); } let tempPairPool = [...allPossiblePairs]; while (newPairs.length < teamCount && tempPairPool.length > 0) { let foundPair = false; for(let i = 0; i < tempPairPool.length; i++){ const pair = tempPairPool[i]; if (availableParticipants.includes(pair[0]) && availableParticipants.includes(pair[1])) { newPairs.push(pair); availableParticipants = availableParticipants.filter(p => p !== pair[0] && p !== pair[1]); tempPairPool.splice(i, 1); foundPair = true; break; } } if (!foundPair) break; } allPossiblePairs = tempPairPool; currentPairsDiv.innerHTML = ''; newPairs.forEach(pair => { const pairDiv = document.createElement('div'); pairDiv.className = 'bg-black/20 p-4 rounded-md text-center fade-in border border-gray-700'; pairDiv.innerHTML = `<div class="text-lg font-bold">${pair[0]}</div><div class="text-sm text-red-500">&</div><div class="text-lg font-bold">${pair[1]}</div>`; currentPairsDiv.appendChild(pairDiv); }); leftoverParticipantP.textContent = availableParticipants.length > 0 ? `Aguardando: ${availableParticipants.join(', ')}` : ''; const duration = parseInt(document.getElementById('timer-duration').value, 10) * 60; remainingTime = duration; isPaused = true; clearInterval(timerInterval); timerInterval = null; updateTimerDisplay(); toggleTimerBtn.innerHTML = playIcon; }
+        toggleTimerBtn.addEventListener('click', toggleTimer);
+        nextRoundBtn.addEventListener('click', selectAndDisplayPairs);
+        endDojoBtn.addEventListener('click', () => { clearInterval(timerInterval); timerInterval = null; sessionScreen.classList.add('hidden'); setupScreen.classList.remove('hidden'); });
+        
+        // --- Initial Render ---
+        renderAll();
+        toggleTimerBtn.innerHTML = playIcon;
+    });
+    </script>
+</body>
+</html>
