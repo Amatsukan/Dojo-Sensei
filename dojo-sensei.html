@@ -22,22 +22,22 @@
         .card { background-color: var(--bg-dark-secondary); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); }
         .input-field, .textarea-field { background-color: #111111; border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-secondary); transition: border-color 0.3s, box-shadow 0.3s; }
         .input-field:focus, .textarea-field:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 8px var(--accent-blue); }
-        .btn { border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; border: 1px solid transparent; }
+        .btn { border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-primary { background-color: var(--accent-red); color: #fff; }
-        .btn-primary:hover { background-color: var(--accent-red-hover); box-shadow: 0 0 10px var(--accent-red-hover); }
+        .btn-primary:hover:not(:disabled) { background-color: var(--accent-red-hover); box-shadow: 0 0 10px var(--accent-red-hover); }
         .btn-secondary { background-color: var(--border-color); color: var(--text-secondary); }
-        .btn-secondary:hover { background-color: #4a5568; }
+        .btn-secondary:hover:not(:disabled) { background-color: #4a5568; }
         .btn-outline { background-color: transparent; color: var(--accent-red); border-color: var(--accent-red); }
-        .btn-outline:hover { background-color: var(--accent-red); color: #fff; }
+        .btn-outline:hover:not(:disabled) { background-color: var(--accent-red); color: #fff; }
         .btn-ai { background-color: var(--accent-blue); color: #fff; }
-        .btn-ai:hover { background-color: var(--accent-blue-hover); box-shadow: 0 0 10px var(--accent-blue-hover); }
+        .btn-ai:hover:not(:disabled) { background-color: var(--accent-blue-hover); box-shadow: 0 0 10px var(--accent-blue-hover); }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .trainer-checkbox { appearance: none; background-color: #111111; border: 1px solid var(--border-color); width: 1.25rem; height: 1.25rem; border-radius: 2px; cursor: pointer; position: relative; }
         .trainer-checkbox:checked { background-color: var(--accent-yellow); border-color: var(--accent-yellow); }
         .trainer-checkbox:checked::after { content: '✓'; font-size: 1rem; color: var(--bg-dark-primary); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: var(--bg-dark-primary); } ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: #4a5568; }
-        
         .accordion-header { cursor: pointer; padding: 1rem; background-color: #161616; border-bottom: 1px solid var(--border-color); transition: background-color 0.3s; }
         .accordion-header:hover { background-color: #2a2a2a; }
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; background-color: #1a1a1a; }
@@ -46,9 +46,20 @@
         .task-item.completed { opacity: 0.5; }
         .task-item.completed .task-objective { text-decoration: line-through; }
         .test-case-item code { background-color: #000; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
+        
+        /* Custom Toast Notification */
+        #toast-notification { position: fixed; top: 20px; right: 20px; background-color: var(--accent-blue); color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transform: translateX(200%); transition: transform 0.5s ease-in-out; z-index: 1000; }
+        #toast-notification.show { transform: translateX(0); }
+
+        /* Spinner for AI buttons */
+        .spinner { border: 2px solid #f3f3f3; border-top: 2px solid var(--accent-blue); border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="toast-notification"></div>
 
     <div class="w-full max-w-6xl mx-auto">
         <header class="text-center mb-8">
@@ -58,19 +69,22 @@
 
         <main id="setup-screen" class="card p-8 space-y-8">
             <div class="flex justify-center">
-                <button id="import-session-btn" class="btn btn-secondary py-2 px-6">Importar Sessão</button>
+                <button id="import-session-btn" class="btn btn-secondary py-2 px-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
+                    <span>Importar Sessão</span>
+                </button>
                 <input type="file" id="import-file-input" class="hidden" accept=".json">
             </div>
             <div>
-                <h2 class="text-2xl font-bold mb-4 pb-2">1. Participantes</h2>
+                <h2 class="text-2xl font-bold mb-4 pb-2 border-b border-gray-700">1. Participantes</h2>
                 <div class="flex flex-col sm:flex-row gap-4 mb-4">
                     <input type="text" id="participant-name" placeholder="Nome do Participante" class="input-field flex-grow px-4 py-2">
                     <button id="add-participant" class="btn btn-primary py-2 px-6">Adicionar</button>
                 </div>
-                <div id="participants-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+                <ul id="participants-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></ul>
             </div>
             <div>
-                <h2 class="text-2xl font-bold mb-4 pb-2">2. Configurações</h2>
+                <h2 class="text-2xl font-bold mb-4 pb-2 border-b border-gray-700">2. Configurações</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-3">
                         <label class="font-bold">Modo de Operação</label>
@@ -80,7 +94,7 @@
                     <div class="space-y-3 md:col-span-2"><label for="timer-duration" class="font-bold">Duração da Rodada (minutos)</label><input type="number" id="timer-duration" min="1" value="10" class="input-field w-full px-4 py-2"></div>
                 </div>
             </div>
-            <div class="pt-4"><button id="start-dojo" class="btn btn-primary w-full text-lg py-3 px-6 flex items-center justify-center gap-2">Iniciar Dojo</button></div>
+            <div class="pt-4"><button id="start-dojo" class="btn btn-primary w-full text-lg py-3 px-6">Iniciar Dojo</button></div>
         </main>
 
         <section id="session-screen" class="hidden card p-8 fade-in">
@@ -88,6 +102,10 @@
                 <div>
                     <div class="text-center mb-8"><h2 class="text-2xl font-bold text-red-500 mb-2">Cronômetro</h2><div id="timer-display" class="text-7xl font-bold tracking-tighter">00:00</div></div>
                     <div class="mb-8"><h3 class="text-2xl font-bold text-center mb-4">Duplas da Rodada</h3><div id="current-pairs" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4"></div><p id="leftover-participant" class="text-center mt-4"></p></div>
+                    <div id="pairs-history-container" class="mt-8">
+                        <h3 class="text-xl font-bold text-center mb-4">Histórico de Duplas</h3>
+                        <ul id="pairs-history-list" class="space-y-2 max-h-40 overflow-y-auto text-center text-sm opacity-70"></ul>
+                    </div>
                 </div>
                 <div id="session-details" class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                     <div class="accordion-item border border-gray-700 rounded-md">
@@ -97,17 +115,17 @@
                     <div class="accordion-item border border-gray-700 rounded-md">
                         <div class="accordion-header flex justify-between items-center"><h3 class="text-xl font-bold">Casos de Teste</h3><span class="transform transition-transform duration-300">▼</span></div>
                         <div class="accordion-content p-4">
-                            <div id="test-case-list"></div>
-                            <button id="generate-tests-btn" class="btn btn-ai w-full py-2 px-4 mt-2 flex items-center justify-center gap-2">✨ Gerar Casos de Teste com IA</button>
+                            <ul id="test-case-list"></ul>
+                            <button id="generate-tests-btn" class="btn btn-ai w-full py-2 px-4 mt-2">✨ Gerar Casos de Teste com IA</button>
                             <p id="test-gen-status" class="text-center text-sm h-5 mt-2"></p>
                         </div>
                     </div>
                     <div class="accordion-item border border-gray-700 rounded-md">
                         <div class="accordion-header flex justify-between items-center"><h3 class="text-xl font-bold">Tarefas a Fazer</h3><span class="transform transition-transform duration-300">▼</span></div>
                         <div class="accordion-content p-4">
-                            <button id="generate-tasks-btn" class="btn btn-ai w-full py-2 px-4 mb-4 flex items-center justify-center gap-2">✨ Gerar Tarefas com IA</button>
+                            <button id="generate-tasks-btn" class="btn btn-ai w-full py-2 px-4 mb-4">✨ Gerar Tarefas com IA</button>
                             <p id="task-gen-status" class="text-center text-sm h-5 mb-2"></p>
-                            <div id="todo-list"></div>
+                            <ul id="todo-list"></ul>
                             <div class="mt-4 space-y-2">
                                 <input type="text" id="task-objective" placeholder="Objetivo da tarefa" class="input-field w-full p-2">
                                 <input type="text" id="task-delivery" placeholder="Entrega esperada" class="input-field w-full p-2">
@@ -117,15 +135,15 @@
                     </div>
                     <div class="accordion-item border border-gray-700 rounded-md">
                         <div class="accordion-header flex justify-between items-center"><h3 class="text-xl font-bold">Tarefas Concluídas</h3><span class="transform transition-transform duration-300">▼</span></div>
-                        <div class="accordion-content p-4"><div id="completed-list"></div></div>
+                        <div class="accordion-content p-4"><ul id="completed-list"></ul></div>
                     </div>
                 </div>
             </div>
             <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button id="toggle-timer" class="btn btn-primary py-3 px-8 flex items-center justify-center gap-2 w-full sm:w-auto"></button>
-                <button id="next-round" class="btn btn-secondary py-3 px-8 flex items-center justify-center gap-2 w-full sm:w-auto">Próxima Rodada</button>
-                <button id="export-session-btn" class="btn btn-secondary py-3 px-8 flex items-center justify-center gap-2 w-full sm:w-auto">Exportar</button>
-                <button id="end-dojo" class="btn btn-outline py-3 px-8 flex items-center justify-center gap-2 w-full sm:w-auto">Encerrar</button>
+                <button id="toggle-timer" class="btn btn-primary py-3 px-8 w-full sm:w-auto"></button>
+                <button id="next-round" class="btn btn-primary py-3 px-8 w-full sm:w-auto">Próxima Rodada</button>
+                <button id="export-session-btn" class="btn btn-secondary py-3 px-8 w-full sm:w-auto">Exportar</button>
+                <button id="end-dojo" class="btn btn-outline py-3 px-8 w-full sm:w-auto">Encerrar</button>
             </div>
         </section>
     </div>
@@ -159,6 +177,8 @@
         const generateTestsBtn = document.getElementById('generate-tests-btn');
         const testCaseListDiv = document.getElementById('test-case-list');
         const testGenStatusP = document.getElementById('test-gen-status');
+        const toast = document.getElementById('toast-notification');
+        const pairsHistoryList = document.getElementById('pairs-history-list');
 
         // --- Application State ---
         let sessionState = {
@@ -167,7 +187,8 @@
             problemDescription: '',
             todoTasks: [],
             completedTasks: [],
-            testCases: []
+            testCases: [],
+            pairsHistory: []
         };
         let timerInterval = null;
         let remainingTime = 0;
@@ -175,14 +196,37 @@
         let allPossiblePairs = [];
         let synth = null;
 
-        const playIcon = `Play`;
-        const pauseIcon = `Pause`;
+        const playIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.804 8 5 4.633v6.734L10.804 8zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696l6.363 3.692z"/></svg> <span>Play</span>`;
+        const pauseIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6 3.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5zm4 0a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5z"/></svg> <span>Pause</span>`;
+        
+        // --- Util Functions ---
+        function showToast(message, duration = 3000) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
 
+        function toggleAILoading(btn, statusP, isLoading, message = '') {
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = `<div class="spinner"></div> <span>${message}</span>`;
+            } else {
+                btn.disabled = false;
+                const originalText = btn.id.includes('tasks') ? '✨ Gerar Tarefas com IA' : '✨ Gerar Casos de Teste com IA';
+                btn.innerHTML = originalText;
+                statusP.textContent = message;
+                setTimeout(() => statusP.textContent = '', 4000);
+            }
+        }
+        
         // --- Render Functions ---
         function renderAll() {
             renderParticipants();
             renderTasks();
             renderTestCases();
+            renderPairsHistory();
         }
 
         function renderParticipants() {
@@ -192,19 +236,23 @@
                 return;
             }
             sessionState.participants.forEach((p, index) => {
-                const participantDiv = document.createElement('div');
-                participantDiv.className = 'flex items-center justify-between bg-black/20 p-3 rounded-md animate-fade-in';
-                participantDiv.innerHTML = `
-                    <div class="flex items-center gap-3">
+                const participantLi = document.createElement('li');
+                participantLi.className = 'flex items-center justify-between bg-black/20 p-3 rounded-md fade-in';
+                participantLi.innerHTML = `
+                    <div class="flex items-center gap-3 flex-grow">
                         <label class="flex items-center cursor-pointer">
                             <input type="checkbox" data-index="${index}" ${p.isTrainer ? 'checked' : ''} class="trainer-checkbox">
-                            <span class="ml-2 text-yellow-400 text-sm font-bold">Treinador</span>
+                            <span class="ml-2 text-yellow-400 text-sm font-bold bg-yellow-900/50 px-2 py-1 rounded">Treinador</span>
                         </label>
-                        <span class="font-medium">${p.name}</span>
+                        <span class="font-medium participant-name" data-index="${index}">${p.name}</span>
+                        <input type="text" class="input-field px-2 py-1 hidden participant-edit-input" value="${p.name}" data-index="${index}">
                     </div>
-                    <button data-index="${index}" class="remove-participant text-red-500 hover:text-red-400 transition text-2xl font-bold">&times;</button>
+                    <div>
+                        <button data-index="${index}" class="edit-participant text-blue-400 hover:text-blue-300 text-xl font-bold mr-2">✏️</button>
+                        <button data-index="${index}" class="remove-participant text-red-500 hover:text-red-400 text-2xl font-bold">&times;</button>
+                    </div>
                 `;
-                participantsListDiv.appendChild(participantDiv);
+                participantsListDiv.appendChild(participantLi);
             });
         }
         
@@ -213,10 +261,10 @@
             completedListDiv.innerHTML = '';
             
             if (sessionState.todoTasks.length === 0) {
-                todoListDiv.innerHTML = `<p class="text-center opacity-50 text-sm">Nenhuma tarefa pendente.</p>`;
+                todoListDiv.innerHTML = `<li class="text-center opacity-50 text-sm">Nenhuma tarefa pendente.</li>`;
             } else {
                  sessionState.todoTasks.forEach((task, index) => {
-                    const taskEl = document.createElement('div');
+                    const taskEl = document.createElement('li');
                     taskEl.className = 'task-item p-3';
                     taskEl.innerHTML = `
                         <div class="flex justify-between items-start">
@@ -232,10 +280,10 @@
             }
 
             if (sessionState.completedTasks.length === 0) {
-                completedListDiv.innerHTML = `<p class="text-center opacity-50 text-sm">Nenhuma tarefa concluída.</p>`;
+                completedListDiv.innerHTML = `<li class="text-center opacity-50 text-sm">Nenhuma tarefa concluída.</li>`;
             } else {
                 sessionState.completedTasks.forEach(task => {
-                    const taskEl = document.createElement('div');
+                    const taskEl = document.createElement('li');
                     taskEl.className = 'task-item p-3 completed';
                     taskEl.innerHTML = `<p class="font-bold task-objective">${task.objective}</p><p class="text-sm opacity-70">${task.delivery}</p>`;
                     completedListDiv.appendChild(taskEl);
@@ -246,18 +294,31 @@
         function renderTestCases() {
             testCaseListDiv.innerHTML = '';
             if (sessionState.testCases.length === 0) {
-                testCaseListDiv.innerHTML = `<p class="text-center opacity-50 text-sm">Nenhum caso de teste gerado.</p>`;
+                testCaseListDiv.innerHTML = `<li class="text-center opacity-50 text-sm">Nenhum caso de teste gerado.</li>`;
                 return;
             }
             sessionState.testCases.forEach(tc => {
-                const tcEl = document.createElement('div');
+                const tcEl = document.createElement('li');
                 tcEl.className = 'test-case-item p-3';
                 tcEl.innerHTML = `
                     <p class="font-bold">${tc.description}</p>
-                    <p class="text-sm mt-1"><strong>Entrada:</strong> code>${tc.input}</code></p>
+                    <p class="text-sm mt-1"><strong>Entrada:</strong> <code>${tc.input}</code></p>
                     <p class="text-sm"><strong>Saída Esperada:</strong> <code>${tc.expectedOutput}</code></p>
                 `;
                 testCaseListDiv.appendChild(tcEl);
+            });
+        }
+        
+        function renderPairsHistory() {
+            pairsHistoryList.innerHTML = '';
+            if (sessionState.pairsHistory.length === 0) {
+                pairsHistoryList.innerHTML = `<li>Nenhuma rodada anterior.</li>`;
+                return;
+            }
+            sessionState.pairsHistory.forEach((round, index) => {
+                const roundLi = document.createElement('li');
+                roundLi.innerHTML = `<strong>Rodada ${index + 1}:</strong> ${round.map(pair => pair.join(' & ')).join(', ')}`;
+                pairsHistoryList.appendChild(roundLi);
             });
         }
 
@@ -270,6 +331,13 @@
                 renderParticipants();
             }
             participantNameInput.focus();
+        }
+        
+        function updateParticipantName(index, newName) {
+            if (newName && !sessionState.participants.some((p, i) => i !== index && p.name.toLowerCase() === newName.toLowerCase())) {
+                sessionState.participants[index].name = newName;
+            }
+            renderParticipants(); // Re-render to exit editing mode
         }
         
         function addTask() {
@@ -290,97 +358,61 @@
         }
         
         // --- AI & File Functions ---
-        async function generateTasks() {
+        async function generateWithAI(prompt, schema, btn, statusP) {
             sessionState.problemDescription = problemDescriptionTextarea.value;
             if (!sessionState.problemDescription.trim()) {
-                alert("Por favor, insira uma descrição do problema primeiro.");
+                showToast("Por favor, insira uma descrição do problema primeiro.");
                 return;
             }
-            taskGenStatusP.textContent = 'Analisando o problema...';
-            generateTasksBtn.disabled = true;
-
-            const prompt = `Analise a seguinte descrição de um problema de programação e divida-o em uma lista de tarefas pequenas e acionáveis para uma sessão de coding dojo. Para cada tarefa, forneça um "objective" (objetivo) e um "delivery" (entrega esperada). Retorne a resposta como um array JSON de objetos. Descrição: "${sessionState.problemDescription}"`;
+            toggleAILoading(btn, statusP, true, 'Gerando...');
             
             try {
                 const payload = {
                     contents: [{ role: "user", parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "ARRAY",
-                            items: {
-                                type: "OBJECT",
-                                properties: {
-                                    "objective": { "type": "STRING" },
-                                    "delivery": { "type": "STRING" }
-                                },
-                                required: ["objective", "delivery"]
-                            }
-                        }
-                    }
+                    generationConfig: { responseMimeType: "application/json", responseSchema: schema }
                 };
-                const apiKey = "";
+                const apiKey = ""; // Sua API Key aqui
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
                 const result = await response.json();
                 
                 const jsonText = result.candidates[0].content.parts[0].text;
-                const tasks = JSON.parse(jsonText);
-                sessionState.todoTasks.push(...tasks);
-                renderTasks();
-                taskGenStatusP.textContent = '✅ Tarefas geradas!';
+                return { success: true, data: JSON.parse(jsonText) };
 
             } catch (error) {
-                console.error("Erro ao gerar tarefas:", error);
-                taskGenStatusP.textContent = '❌ Erro ao gerar tarefas.';
-            } finally {
-                generateTasksBtn.disabled = false;
+                console.error("Erro na chamada da IA:", error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function generateTasks() {
+            const prompt = `Analise a seguinte descrição de um problema de programação e divida-o em uma lista de tarefas pequenas e acionáveis para uma sessão de coding dojo. Para cada tarefa, forneça um "objective" (objetivo) e um "delivery" (entrega esperada). Retorne a resposta como um array JSON de objetos. Descrição: "${sessionState.problemDescription}"`;
+            const schema = { type: "ARRAY", items: { type: "OBJECT", properties: { "objective": { "type": "STRING" }, "delivery": { "type": "STRING" } }, required: ["objective", "delivery"] } };
+            
+            const result = await generateWithAI(prompt, schema, generateTasksBtn, taskGenStatusP);
+
+            if (result.success) {
+                sessionState.todoTasks.push(...result.data);
+                renderTasks();
+                toggleAILoading(generateTasksBtn, taskGenStatusP, false, '✅ Tarefas geradas!');
+            } else {
+                toggleAILoading(generateTasksBtn, taskGenStatusP, false, '❌ Erro ao gerar tarefas.');
             }
         }
 
         async function generateTestCases() {
-            sessionState.problemDescription = problemDescriptionTextarea.value;
-            if (!sessionState.problemDescription.trim()) {
-                alert("Por favor, insira uma descrição do problema primeiro.");
-                return;
-            }
-            testGenStatusP.textContent = 'Gerando casos de teste...';
-            generateTestsBtn.disabled = true;
-
             const prompt = `Baseado na seguinte descrição de um problema de programação, gere uma lista de casos de teste, incluindo casos de borda (edge cases). Para cada caso de teste, forneça uma 'description' (descrição), um 'input' (entrada) e um 'expectedOutput' (saída esperada). Retorne a resposta como um array JSON de objetos. Descrição: "${sessionState.problemDescription}"`;
-            
-            try {
-                const payload = {
-                    contents: [{ role: "user", parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "ARRAY", items: { type: "OBJECT", properties: {
-                                "description": { "type": "STRING" },
-                                "input": { "type": "STRING" },
-                                "expectedOutput": { "type": "STRING" }
-                            }, required: ["description", "input", "expectedOutput"] }
-                        }
-                    }
-                };
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
-                const result = await response.json();
-                
-                const jsonText = result.candidates[0].content.parts[0].text;
-                const tests = JSON.parse(jsonText);
-                sessionState.testCases.push(...tests);
-                renderTestCases();
-                testGenStatusP.textContent = '✅ Testes gerados!';
+            const schema = { type: "ARRAY", items: { type: "OBJECT", properties: { "description": { "type": "STRING" }, "input": { "type": "STRING" }, "expectedOutput": { "type": "STRING" } }, required: ["description", "input", "expectedOutput"] } };
 
-            } catch (error) {
-                console.error("Erro ao gerar testes:", error);
-                testGenStatusP.textContent = '❌ Erro ao gerar testes.';
-            } finally {
-                generateTestsBtn.disabled = false;
+            const result = await generateWithAI(prompt, schema, generateTestsBtn, testGenStatusP);
+
+            if (result.success) {
+                sessionState.testCases.push(...result.data);
+                renderTestCases();
+                toggleAILoading(generateTestsBtn, testGenStatusP, false, '✅ Testes gerados!');
+            } else {
+                toggleAILoading(generateTestsBtn, testGenStatusP, false, '❌ Erro ao gerar testes.');
             }
         }
         
@@ -404,15 +436,18 @@
             reader.onload = (e) => {
                 try {
                     const importedState = JSON.parse(e.target.result);
-                    sessionState = { ...{testCases: []}, ...importedState };
+                    // Ensure backward compatibility for sessions without new fields
+                    const defaults = { testCases: [], pairsHistory: [] };
+                    sessionState = { ...defaults, ...importedState };
+                    
                     document.querySelector(`input[name="dojo-mode"][value="${sessionState.settings.mode}"]`).checked = true;
                     document.getElementById('team-count').value = sessionState.settings.teamCount;
                     document.getElementById('timer-duration').value = sessionState.settings.timerDuration;
                     problemDescriptionTextarea.value = sessionState.problemDescription;
                     renderAll();
-                    alert('Sessão importada com sucesso!');
+                    showToast('Sessão importada com sucesso!');
                 } catch (error) {
-                    alert('Erro ao ler o arquivo de sessão.');
+                    showToast('Erro ao ler o arquivo de sessão.', 5000);
                     console.error(error);
                 }
             };
@@ -421,12 +456,7 @@
 
         // --- Event Listeners ---
         addParticipantBtn.addEventListener('click', addParticipant);
-        participantNameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addParticipant();
-            }
-        });
+        participantNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addParticipant(); } });
 
         addTaskBtn.addEventListener('click', addTask);
         generateTasksBtn.addEventListener('click', generateTasks);
@@ -436,19 +466,39 @@
         exportSessionBtn.addEventListener('click', exportSession);
         
         participantsListDiv.addEventListener('click', (e) => {
-             if (e.target.classList.contains('remove-participant')) {
-                sessionState.participants.splice(e.target.dataset.index, 1);
-                renderParticipants();
-            } else if (e.target.classList.contains('trainer-checkbox')) {
-                sessionState.participants[e.target.dataset.index].isTrainer = e.target.checked;
+            const target = e.target;
+            const index = target.dataset.index;
+
+            if (target.classList.contains('remove-participant')) {
+                if (confirm('Tem certeza de que deseja remover este participante?')) {
+                    sessionState.participants.splice(index, 1);
+                    renderParticipants();
+                }
+            } else if (target.classList.contains('trainer-checkbox')) {
+                sessionState.participants[index].isTrainer = target.checked;
+            } else if (target.classList.contains('edit-participant')) {
+                 const li = target.closest('li');
+                 li.querySelector('.participant-name').classList.add('hidden');
+                 const input = li.querySelector('.participant-edit-input');
+                 input.classList.remove('hidden');
+                 input.focus();
+                 input.select();
             }
         });
 
-        todoListDiv.addEventListener('click', (e) => {
-            if (e.target.classList.contains('complete-task-btn')) {
-                completeTask(e.target.dataset.index);
+        participantsListDiv.addEventListener('focusout', (e) => {
+            if (e.target.classList.contains('participant-edit-input')) {
+                updateParticipantName(e.target.dataset.index, e.target.value.trim());
             }
         });
+        
+        participantsListDiv.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && e.target.classList.contains('participant-edit-input')) {
+                updateParticipantName(e.target.dataset.index, e.target.value.trim());
+            }
+        });
+
+        todoListDiv.addEventListener('click', (e) => { if (e.target.closest('.complete-task-btn')) { completeTask(e.target.closest('.complete-task-btn').dataset.index); } });
         
         document.querySelectorAll('.accordion-header').forEach(header => {
             header.addEventListener('click', () => {
@@ -459,7 +509,7 @@
         });
 
         startDojoBtn.addEventListener('click', () => {
-            if (sessionState.participants.length < 2) { alert('Adicione pelo menos 2 participantes.'); return; }
+            if (sessionState.participants.length < 2) { showToast('Adicione pelo menos 2 participantes.'); return; }
             sessionState.problemDescription = problemDescriptionTextarea.value;
             setupScreen.classList.add('hidden');
             sessionScreen.classList.remove('hidden');
@@ -467,14 +517,15 @@
             selectAndDisplayPairs();
         });
         
+        // --- Timer & Session Logic ---
         function updateTimerDisplay() { const minutes = Math.floor(remainingTime / 60); const seconds = remainingTime % 60; timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; timerDisplay.style.color = remainingTime <= 10 && remainingTime > 0 ? 'var(--accent-yellow)' : remainingTime === 0 ? 'var(--accent-red)' : 'var(--text-secondary)'; }
         function timerTick() { if (remainingTime > 0) { remainingTime--; updateTimerDisplay(); } else { clearInterval(timerInterval); timerInterval = null; isPaused = true; toggleTimerBtn.innerHTML = playIcon; if (typeof Tone !== 'undefined' && !synth) { synth = new Tone.Synth().toDestination(); } if (synth) { synth.triggerAttackRelease("C5", "8n", Tone.now()); } } }
         function toggleTimer() { isPaused = !isPaused; if (!isPaused && remainingTime > 0) { timerInterval = setInterval(timerTick, 1000); toggleTimerBtn.innerHTML = pauseIcon; } else { clearInterval(timerInterval); timerInterval = null; toggleTimerBtn.innerHTML = playIcon; } }
         function generateAllPossiblePairs() { const trainers = sessionState.participants.filter(p => p.isTrainer); const students = sessionState.participants.filter(p => !p.isTrainer); const pairs = []; for (const trainer of trainers) { for (const student of students) { pairs.push([trainer.name, student.name].sort()); } } for (let i = 0; i < students.length; i++) { for (let j = i + 1; j < students.length; j++) { pairs.push([students[i].name, students[j].name].sort()); } } const uniquePairStrings = [...new Set(pairs.map(p => p.join('-')))]; allPossiblePairs = uniquePairStrings.map(s => s.split('-')); for (let i = allPossiblePairs.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [allPossiblePairs[i], allPossiblePairs[j]] = [allPossiblePairs[j], allPossiblePairs[i]]; } }
-        function selectAndDisplayPairs() { const mode = document.querySelector('input[name="dojo-mode"]:checked').value; const teamCount = mode === 'single' ? 1 : parseInt(document.getElementById('team-count').value, 10); let availableParticipants = [...sessionState.participants.map(p => p.name)]; let newPairs = []; if (allPossiblePairs.length < teamCount) { generateAllPossiblePairs(); } let tempPairPool = [...allPossiblePairs]; while (newPairs.length < teamCount && tempPairPool.length > 0) { let foundPair = false; for(let i = 0; i < tempPairPool.length; i++){ const pair = tempPairPool[i]; if (availableParticipants.includes(pair[0]) && availableParticipants.includes(pair[1])) { newPairs.push(pair); availableParticipants = availableParticipants.filter(p => p !== pair[0] && p !== pair[1]); tempPairPool.splice(i, 1); foundPair = true; break; } } if (!foundPair) break; } allPossiblePairs = tempPairPool; currentPairsDiv.innerHTML = ''; newPairs.forEach(pair => { const pairDiv = document.createElement('div'); pairDiv.className = 'bg-black/20 p-4 rounded-md text-center fade-in border border-gray-700'; pairDiv.innerHTML = `<div class="text-lg font-bold">${pair[0]}</div><div class="text-sm text-red-500">&</div><div class="text-lg font-bold">${pair[1]}</div>`; currentPairsDiv.appendChild(pairDiv); }); leftoverParticipantP.textContent = availableParticipants.length > 0 ? `Aguardando: ${availableParticipants.join(', ')}` : ''; const duration = parseInt(document.getElementById('timer-duration').value, 10) * 60; remainingTime = duration; isPaused = true; clearInterval(timerInterval); timerInterval = null; updateTimerDisplay(); toggleTimerBtn.innerHTML = playIcon; }
+        function selectAndDisplayPairs() { const mode = document.querySelector('input[name="dojo-mode"]:checked').value; const teamCount = mode === 'single' ? 1 : parseInt(document.getElementById('team-count').value, 10); let availableParticipants = [...sessionState.participants.map(p => p.name)]; let newPairs = []; if (allPossiblePairs.length < teamCount) { generateAllPossiblePairs(); } let tempPairPool = [...allPossiblePairs]; while (newPairs.length < teamCount && tempPairPool.length > 0) { let foundPair = false; for(let i = 0; i < tempPairPool.length; i++){ const pair = tempPairPool[i]; if (availableParticipants.includes(pair[0]) && availableParticipants.includes(pair[1])) { newPairs.push(pair); availableParticipants = availableParticipants.filter(p => p !== pair[0] && p !== pair[1]); tempPairPool.splice(i, 1); foundPair = true; break; } } if (!foundPair) break; } allPossiblePairs = tempPairPool; currentPairsDiv.innerHTML = ''; if (newPairs.length > 0) { sessionState.pairsHistory.push(newPairs); renderPairsHistory(); } newPairs.forEach(pair => { const pairDiv = document.createElement('div'); pairDiv.className = 'bg-black/20 p-4 rounded-md text-center fade-in border border-gray-700'; pairDiv.innerHTML = `<div class="text-lg font-bold">${pair[0]}</div><div class="text-sm text-red-500">&</div><div class="text-lg font-bold">${pair[1]}</div>`; currentPairsDiv.appendChild(pairDiv); }); leftoverParticipantP.textContent = availableParticipants.length > 0 ? `Aguardando: ${availableParticipants.join(', ')}` : ''; const duration = parseInt(document.getElementById('timer-duration').value, 10) * 60; remainingTime = duration; isPaused = true; clearInterval(timerInterval); timerInterval = null; updateTimerDisplay(); toggleTimerBtn.innerHTML = playIcon; }
         toggleTimerBtn.addEventListener('click', toggleTimer);
         nextRoundBtn.addEventListener('click', selectAndDisplayPairs);
-        endDojoBtn.addEventListener('click', () => { clearInterval(timerInterval); timerInterval = null; sessionScreen.classList.add('hidden'); setupScreen.classList.remove('hidden'); });
+        endDojoBtn.addEventListener('click', () => { clearInterval(timerInterval); timerInterval = null; sessionScreen.classList.add('hidden'); setupScreen.classList.remove('hidden'); sessionState.pairsHistory = []; renderPairsHistory(); });
         
         // --- Initial Render ---
         renderAll();
