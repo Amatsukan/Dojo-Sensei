@@ -66,6 +66,16 @@
         </header>
 
         <main id="setup-screen" class="card p-8 space-y-8">
+            <div>
+                <h2 class="text-2xl font-bold mb-4 pb-2 border-b border-gray-700">0. Configuração da API <span class="text-sm font-normal opacity-70">(Obrigatório para IA)</span></h2>
+                <div class="flex flex-col sm:flex-row gap-4 items-center">
+                    <input type="password" id="api-key-input" placeholder="Sua Chave da API Gemini" class="input-field flex-grow px-4 py-2">
+                    <button id="save-api-key-btn" class="btn btn-secondary py-2 px-6">Salvar Chave</button>
+                </div>
+                <p class="text-xs text-center opacity-50 mt-2">Sua chave é salva apenas no seu navegador e nunca sai do seu computador.</p>
+                <p id="api-key-status" class="text-center text-sm h-5 mt-2 text-green-500"></p>
+            </div>
+
             <div class="flex justify-center">
                 <button id="import-session-btn" class="btn btn-secondary py-2 px-6">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
@@ -110,7 +120,7 @@
                         <div class="accordion-header flex justify-between items-center">
                             <h3 class="text-xl font-bold">Descrição do Problema</h3>
                             <div class="flex items-center">
-                                <button id="improve-description-btn" class="btn btn-ai btn-sm py-1 px-2 text-xs mr-2">✨ Melhorar com IA</button>
+                                <button id="improve-description-btn" class="btn btn-ai btn-sm py-1 px-2 text-xs mr-2 hidden">✨ Melhorar com IA</button>
                                 <span class="transform transition-transform duration-300">▼</span>
                             </div>
                         </div>
@@ -121,7 +131,7 @@
                         <div class="accordion-content p-4">
                             <ul id="test-case-list" class="space-y-3"></ul>
                              <div class="flex items-center gap-2 mt-4">
-                                <button id="generate-tests-btn" class="btn btn-ai w-full py-2 px-4">✨ Gerar com IA</button>
+                                <button id="generate-tests-btn" class="btn btn-ai w-full py-2 px-4 hidden">✨ Gerar com IA</button>
                                 <button id="clear-tests-btn" class="btn btn-secondary py-2 px-4">Limpar</button>
                             </div>
                             <p id="test-gen-status" class="text-center text-sm h-5 mt-2"></p>
@@ -137,7 +147,7 @@
                     <div class="accordion-item border border-gray-700 rounded-md">
                         <div class="accordion-header flex justify-between items-center"><h3 class="text-xl font-bold">Tarefas a Fazer</h3><span class="transform transition-transform duration-300">▼</span></div>
                         <div class="accordion-content p-4">
-                            <button id="generate-tasks-btn" class="btn btn-ai w-full py-2 px-4 mb-4">✨ Gerar Tarefas com IA</button>
+                            <button id="generate-tasks-btn" class="btn btn-ai w-full py-2 px-4 mb-4 hidden">✨ Gerar Tarefas com IA</button>
                             <p id="task-gen-status" class="text-center text-sm h-5 mb-2"></p>
                             <ul id="todo-list"></ul>
                             <div class="mt-4 space-y-2">
@@ -199,6 +209,9 @@
         const testInputInput = document.getElementById('test-input');
         const testOutputInput = document.getElementById('test-output');
         const clearTestsBtn = document.getElementById('clear-tests-btn');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+        const apiKeyStatus = document.getElementById('api-key-status');
 
         // --- Application State ---
         let sessionState = {
@@ -210,6 +223,7 @@
             testCases: [],
             pairsHistory: []
         };
+        let userApiKey = null;
         let timerInterval = null;
         let remainingTime = 0;
         let isPaused = true;
@@ -416,8 +430,53 @@
             renderTestCases();
         }
 
+        // --- API Key Management ---
+        function saveApiKey() {
+            const key = apiKeyInput.value.trim();
+            if (key) {
+                localStorage.setItem('geminiApiKey', key);
+                userApiKey = key;
+                apiKeyStatus.textContent = '✅ Chave da API salva com sucesso!';
+                showToast("Chave da API salva no seu navegador.");
+            } else {
+                localStorage.removeItem('geminiApiKey');
+                userApiKey = null;
+                apiKeyStatus.textContent = 'Chave removida.';
+                showToast("Chave da API removida.", 3000);
+            }
+            checkApiKeyAndToggleAIButtons();
+            setTimeout(() => { apiKeyStatus.textContent = ''; }, 4000);
+        }
+
+        function loadApiKey() {
+            const savedKey = localStorage.getItem('geminiApiKey');
+            if (savedKey) {
+                userApiKey = savedKey;
+                apiKeyInput.value = savedKey;
+                apiKeyStatus.textContent = 'Chave da API carregada do seu navegador.';
+                 setTimeout(() => { apiKeyStatus.textContent = ''; }, 4000);
+            }
+            checkApiKeyAndToggleAIButtons();
+        }
+
+        function checkApiKeyAndToggleAIButtons() {
+            const hasKey = !!userApiKey;
+            const aiButtons = [improveDescriptionBtn, generateTasksBtn, generateTestsBtn];
+            aiButtons.forEach(btn => {
+                if(hasKey) {
+                    btn.classList.remove('hidden');
+                } else {
+                    btn.classList.add('hidden');
+                }
+            });
+        }
+
         // --- AI & File Functions ---
         async function callGeminiAPI(prompt, responseMimeType = "text/plain", schema = null) {
+            if (!userApiKey) {
+                showToast("Chave da API Gemini não configurada.", 5000);
+                return { success: false, error: "API Key not set" };
+            }
             try {
                 const generationConfig = { responseMimeType };
                 if (schema) {
@@ -427,8 +486,7 @@
                     contents: [{ role: "user", parts: [{ text: prompt }] }],
                     generationConfig
                 };
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${userApiKey}`;
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 
                 if (!response.ok) {
@@ -489,7 +547,6 @@
         }
 
         async function handleAIGeneration(btn, statusP, promptBuilder, schema, successCallback, loadingMessage, successMessage, errorMessage) {
-            // FIX: Read the description from the textarea right before the call.
             const currentDescription = problemDescriptionTextarea.value.trim();
             if (!currentDescription) {
                 showToast("Por favor, insira uma descrição do problema primeiro.");
@@ -499,7 +556,6 @@
             toggleAILoading(btn, true, loadingMessage);
             statusP.textContent = loadingMessage + '...';
 
-            // FIX: Build the prompt with the most up-to-date description.
             const prompt = promptBuilder(currentDescription);
             const result = await callGeminiAPI(prompt, "application/json", schema);
 
@@ -572,6 +628,7 @@
         addParticipantBtn.addEventListener('click', addParticipant);
         participantNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addParticipant(); } });
 
+        saveApiKeyBtn.addEventListener('click', saveApiKey);
         addTaskBtn.addEventListener('click', addTask);
         addTestBtn.addEventListener('click', addTestCase);
         clearTestsBtn.addEventListener('click', () => {
@@ -668,6 +725,7 @@
         endDojoBtn.addEventListener('click', () => { clearInterval(timerInterval); timerInterval = null; sessionScreen.classList.add('hidden'); setupScreen.classList.remove('hidden'); sessionState.pairsHistory = []; renderPairsHistory(); });
         
         // --- Initial Render ---
+        loadApiKey();
         renderAll();
         toggleTimerBtn.innerHTML = playIcon;
     });
