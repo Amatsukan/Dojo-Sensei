@@ -47,11 +47,9 @@
         .task-item.completed .task-objective { text-decoration: line-through; }
         .test-case-item code { background-color: #000; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
         
-        /* Custom Toast Notification */
         #toast-notification { position: fixed; top: 20px; right: 20px; background-color: var(--accent-blue); color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transform: translateX(200%); transition: transform 0.5s ease-in-out; z-index: 1000; }
         #toast-notification.show { transform: translateX(0); }
 
-        /* Spinner for AI buttons */
         .spinner { border: 2px solid #f3f3f3; border-top: 2px solid var(--accent-blue); border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -337,7 +335,7 @@
             if (newName && !sessionState.participants.some((p, i) => i !== index && p.name.toLowerCase() === newName.toLowerCase())) {
                 sessionState.participants[index].name = newName;
             }
-            renderParticipants(); // Re-render to exit editing mode
+            renderParticipants();
         }
         
         function addTask() {
@@ -371,7 +369,7 @@
                     contents: [{ role: "user", parts: [{ text: prompt }] }],
                     generationConfig: { responseMimeType: "application/json", responseSchema: schema }
                 };
-                const apiKey = ""; // Sua API Key aqui
+                const apiKey = "";
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
@@ -436,7 +434,6 @@
             reader.onload = (e) => {
                 try {
                     const importedState = JSON.parse(e.target.result);
-                    // Ensure backward compatibility for sessions without new fields
                     const defaults = { testCases: [], pairsHistory: [] };
                     sessionState = { ...defaults, ...importedState };
                     
@@ -510,6 +507,12 @@
 
         startDojoBtn.addEventListener('click', () => {
             if (sessionState.participants.length < 2) { showToast('Adicione pelo menos 2 participantes.'); return; }
+            
+            // **CORREÇÃO DO SOM APLICADA AQUI**
+            if (typeof Tone !== 'undefined' && Tone.context.state !== 'running') {
+                Tone.start();
+            }
+
             sessionState.problemDescription = problemDescriptionTextarea.value;
             setupScreen.classList.add('hidden');
             sessionScreen.classList.remove('hidden');
